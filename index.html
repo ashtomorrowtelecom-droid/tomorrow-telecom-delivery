@@ -1,569 +1,475 @@
 <!DOCTYPE html>
-<html lang="en" style="background:#ffffff">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tomorrow Telecom — Delivery Calendar</title>
+<title>Tomorrow Telecom – Delivery Calendar</title>
 <style>
-  html { background: #ffffff; }
-  :root {
-    --bg: #f4f6f9;
-    --surface: #ffffff;
-    --surface2: #f0f2f5;
-    --border: #e0e4ea;
-    --text: #111827;
-    --text-dim: #6b7280;
-    --delivered-bg: #dcfce7;
-    --out-bg: #fff7ed;
-    --way-bg: #eff6ff;
-    --pending-bg: #f3f4f6;
-  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #f4f6f9; color: #111827; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; min-height: 100vh; }
-
-  /* ── Header ── */
-  header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 24px;
-    display: flex; align-items: center; gap: 16px;
-    position: sticky; top: 0; z-index: 200;
+  body { font-family: 'Segoe UI', sans-serif; background: #0f0f0f; color: #e0e0e0; min-height: 100vh; }
+  #login-screen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; background: #0f0f0f;
   }
-  header h1 { font-size: 17px; font-weight: 700; }
-  #headerDate { font-size: 12px; color: var(--text-dim); margin-left: auto; }
-
-  /* ── Filter bar ── */
-  .filter-bar {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 10px 24px;
-    display: flex; align-items: center; gap: 12px;
-    position: sticky; top: 49px; z-index: 190;
-    flex-wrap: wrap;
+  .login-box {
+    background: #1a1a1a; border: 1px solid #333; border-radius: 12px;
+    padding: 40px; width: 340px; text-align: center;
   }
-  .filter-label { font-size: 12px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap; }
-
-  /* Custom multi-select dropdown */
-  .dropdown-wrap { position: relative; }
-  .dropdown-btn {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    padding: 6px 12px;
-    font-size: 13px;
-    cursor: pointer;
-    display: flex; align-items: center; gap: 8px;
-    min-width: 180px;
-    user-select: none;
+  .login-box h1 { font-size: 1.4rem; margin-bottom: 8px; color: #fff; }
+  .login-box p { color: #888; font-size: 0.85rem; margin-bottom: 28px; }
+  .login-box input {
+    width: 100%; padding: 10px 14px; margin-bottom: 12px;
+    background: #242424; border: 1px solid #444; border-radius: 8px;
+    color: #e0e0e0; font-size: 0.95rem;
   }
-  .dropdown-btn:hover { border-color: #5c6bc0; }
-  .dropdown-btn .arrow { margin-left: auto; font-size: 10px; transition: transform 0.15s; }
-  .dropdown-btn.open .arrow { transform: rotate(180deg); }
-  .dropdown-menu {
-    display: none;
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    background: #ffffff;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 8px;
-    min-width: 200px;
-    z-index: 300;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  }
-  .dropdown-menu.open { display: block; }
-  .dropdown-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 7px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    transition: background 0.1s;
-  }
-  .dropdown-item:hover { background: var(--surface2); }
-  .dropdown-item input[type=checkbox] { accent-color: #5c6bc0; width: 15px; height: 15px; cursor: pointer; }
-  .name-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .dropdown-divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
-  .dropdown-action { font-size: 11px; color: var(--text-dim); text-align: center; padding: 4px; cursor: pointer; }
-  .dropdown-action:hover { color: var(--text); }
-
-  /* Status filter pills */
-  .status-pills { display: flex; gap: 6px; flex-wrap: wrap; }
-  .pill {
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 12px;
+  .login-box button {
+    width: 100%; padding: 11px; background: #e20074; color: #fff;
+    border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;
     font-weight: 600;
-    cursor: pointer;
-    border: 1px solid transparent;
-    opacity: 0.5;
-    transition: opacity 0.15s, border-color 0.15s;
-    user-select: none;
   }
-  .pill.active { opacity: 1; }
-  .pill-all  { background: #f0f2f5; color: #111827; border-color: #d1d5db; }
-  .pill-out  { background: #fff7ed; color: #9a3412; border-color: #fdba74; }
-  .pill-way  { background: #eff6ff; color: #1e40af; border-color: #93c5fd; }
-  .pill-done { background: #dcfce7; color: #166534; border-color: #86efac; }
-  .pill-pend { background: #f3f4f6; color: #374151; border-color: #d1d5db; }
-
-  /* ── Stats ── */
-  .container { padding: 20px 24px; max-width: 1100px; margin: 0 auto; }
-  .stats-row { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
-  .stat {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 18px;
-    flex: 1; min-width: 130px;
-    cursor: pointer;
-    transition: border-color 0.15s, transform 0.1s;
+  .login-box button:hover { background: #c4005f; }
+  #login-error { color: #ff6b6b; font-size: 0.85rem; margin-top: 10px; }
+  #app { display: none; }
+  header {
+    background: #1a1a1a; border-bottom: 1px solid #333;
+    padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
   }
-  .stat:hover { border-color: #aaa; transform: translateY(-1px); }
-  .stat.active-stat { background: #111827; border-color: #111827; }
-  .stat.active-stat .stat-value { color: #ffffff !important; }
-  .stat.active-stat .stat-label { color: #d1d5db; }
-  .stat-value { font-size: 26px; font-weight: 700; line-height: 1; }
-  .stat-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.7px; margin-top: 4px; }
-
-  /* ── Day sections ── */
-  .day-section { margin-bottom: 16px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+  header h1 { font-size: 1.1rem; color: #fff; }
+  header .meta { font-size: 0.8rem; color: #888; }
+  .logout-btn {
+    background: none; border: 1px solid #444; color: #aaa;
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+  }
+  .notice-bar {
+    background: #1a1a2a; border-bottom: 1px solid #2a2a4a;
+    padding: 8px 24px; font-size: 0.8rem; color: #7a9adf;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .controls {
+    padding: 16px 24px; display: flex; gap: 12px; flex-wrap: wrap;
+    background: #151515; border-bottom: 1px solid #2a2a2a;
+  }
+  .controls select, .controls input {
+    background: #1e1e1e; border: 1px solid #383838; color: #ccc;
+    padding: 7px 12px; border-radius: 7px; font-size: 0.85rem;
+  }
+  .calendar { padding: 24px; }
+  .day-group { margin-bottom: 32px; }
   .day-header {
-    display: flex; align-items: center; gap: 10px;
-    padding: 13px 16px;
-    background: var(--surface);
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.15s;
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: #666; margin-bottom: 12px;
+    padding-bottom: 6px; border-bottom: 1px solid #222;
   }
-  .day-header:hover { background: var(--surface2); }
-  .day-toggle { font-size: 13px; color: var(--text-dim); transition: transform 0.2s; flex-shrink: 0; }
-  .day-section.collapsed .day-toggle { transform: rotate(-90deg); }
-  .day-header h2 { font-size: 15px; font-weight: 600; }
-  .day-count { font-size: 12px; color: var(--text-dim); background: var(--surface2); padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
-  .day-status-badge {
-    font-size: 11px; padding: 3px 10px; border-radius: 20px;
-    font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase;
-    margin-left: auto; white-space: nowrap;
+  .day-header .day-count { color: #555; font-weight: 400; margin-left: 8px; }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
   }
-  .badge-delivered { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
-  .badge-out       { background: #fff7ed; color: #9a3412; border: 1px solid #fdba74; }
-  .badge-way       { background: #eff6ff; color: #1e40af; border: 1px solid #93c5fd; }
-  .badge-pending   { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
-
-  .day-body { padding: 12px; background: var(--bg); }
-  .day-section.collapsed .day-body { display: none; }
-
-  /* ── Order cards ── */
-  .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
-  .order-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 13px 15px;
-    border-left: 4px solid;
-    transition: transform 0.1s;
+  .card {
+    background: #1a1a1a; border-radius: 10px; border: 1px solid #2a2a2a;
+    padding: 14px 16px; position: relative; overflow: hidden;
   }
-  .order-card:hover { transform: translateY(-1px); }
-  .order-card.hidden { display: none; }
-  .order-top { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
-  .order-label { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; color: #fff; letter-spacing: 0.5px; }
-  .order-ref { font-size: 13px; font-weight: 600; flex: 1; }
-  .order-time { font-size: 12px; color: var(--text-dim); white-space: nowrap; }
-  .order-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 8px; }
-  .pkg-count { font-size: 11px; color: var(--text-dim); background: var(--surface2); padding: 2px 7px; border-radius: 4px; }
-  .order-status { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
-  .status-delivered { background: #dcfce7; color: #166534; }
-  .status-out       { background: #fff7ed; color: #9a3412; }
-  .status-way       { background: #eff6ff; color: #1e40af; }
-  .status-pending   { background: #f3f4f6; color: #374151; }
-  .order-note { font-size: 11px; color: var(--text-dim); }
-  .tracking-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
-  .tracking-num { font-size: 10px; font-family: 'Courier New', monospace; color: #4b5563; background: #f0f2f5; border: 1px solid #e0e4ea; padding: 2px 6px; border-radius: 3px; transition: color 0.15s; }
-  .tracking-num:hover { color: #111827; }
-  a.tracking-link { text-decoration: none; }
-
-  .no-results { text-align: center; color: var(--text-dim); padding: 24px; font-size: 13px; }
-  .updated-at { font-size: 11px; color: var(--text-dim); text-align: right; padding: 8px 0 24px; }
+  .card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 4px; border-radius: 10px 0 0 10px;
+  }
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; }
+  .card-ref { font-size: 0.95rem; font-weight: 700; color: #fff; }
+  .card-status {
+    font-size: 0.7rem; padding: 3px 8px; border-radius: 12px; font-weight: 600;
+    white-space: nowrap;
+  }
+  .status-delivered { background: #1a3a1a; color: #5cbf5c; }
+  .status-out { background: #1a2a3a; color: #5aaff0; }
+  .status-pending { background: #2a2a1a; color: #c8b44a; }
+  .status-unknown { background: #2a2a2a; color: #888; }
+  .card-time { font-size: 0.85rem; color: #aaa; margin-top: 6px; }
+  .card-location { font-size: 0.75rem; color: #666; margin-top: 3px; }
+  .tracking-list { margin-top: 8px; }
+  .tracking-num {
+    font-size: 0.7rem; color: #666; font-family: monospace;
+    background: #111; padding: 2px 6px; border-radius: 4px;
+    display: inline-block; margin: 2px 2px 0 0;
+  }
+  .summary-bar {
+    background: #161616; border-top: 1px solid #222;
+    padding: 12px 24px; font-size: 0.8rem; color: #666;
+    display: flex; gap: 20px; flex-wrap: wrap;
+  }
+  .summary-bar span { color: #999; }
+  .summary-bar b { color: #ccc; }
+</style>
+</head>m; color: #666;
+    display: flex; gap: 20px; flex-wrap: wrap;
+  }
+  .summary-bar span { color: #999; }
+  .summary-bar b { color: #ccc; }
 </style>
 </head>
-<body style="background:#f4f6f9;color:#111827">
+<body>
 
-<header>
-  <h1>📦 Tomorrow Telecom — Delivery Calendar</h1>
-  <span id="headerDate"></span>
-  <div id="headerUser" style="margin-left:12px;display:flex;align-items:center"></div>
-</header>
-
-<!-- Filter bar -->
-<div class="filter-bar" id="filterBarWrap">
-  <span class="filter-label">Filter by name</span>
-
-  <div class="dropdown-wrap" id="nameDropWrap">
-    <div class="dropdown-btn" id="nameDropBtn" onclick="toggleDropdown()">
-      <span id="nameDropLabel">All names</span>
-      <span class="arrow">▼</span>
-    </div>
-    <div class="dropdown-menu" id="nameDropMenu">
-      <div class="dropdown-item" onclick="selectAllNames()">
-        <input type="checkbox" id="chk-all" checked> <span style="font-weight:600;color:var(--text)">All names</span>
-      </div>
-      <div class="dropdown-item" onclick="deselectAllNames()">
-        <input type="checkbox" id="chk-none"> <span style="font-weight:600;color:var(--text)">Deselect all</span>
-      </div>
-      <hr class="dropdown-divider">
-      <!-- name items injected by JS -->
-      <div id="nameCheckboxes"></div>
-    </div>
-  </div>
-
-  <span class="filter-label" style="margin-left:8px">Status</span>
-  <div class="status-pills">
-    <span class="pill pill-all active"  data-status="all"              onclick="setStatusFilter('all')">All</span>
-    <span class="pill pill-out"         data-status="out_for_delivery" onclick="setStatusFilter('out_for_delivery')">🚚 Out for Delivery</span>
-    <span class="pill pill-way"         data-status="on_the_way"       onclick="setStatusFilter('on_the_way')">📦 On the Way</span>
-    <span class="pill pill-done"        data-status="delivered"        onclick="setStatusFilter('delivered')">✓ Delivered</span>
-    <span class="pill pill-pend"        data-status="pending"          onclick="setStatusFilter('pending')">⏳ Pending</span>
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>Tomorrow Telecom</h1>
+    <p>Delivery Calendar — TTELECOMLLC</p>
+    <input type="text" id="username" placeholder="Username" autocomplete="off">
+    <input type="password" id="password" placeholder="Password" autocomplete="off">
+    <button onclick="doLogin()">Sign In</button>
+    <div id="login-error"></div>
   </div>
 </div>
 
-<!-- Login overlay -->
-<div id="loginOverlay" style="
-  position:fixed;inset:0;background:rgba(0,0,0,0.45);
-  display:flex;align-items:center;justify-content:center;z-index:1000;">
-  <div style="background:#fff;border-radius:16px;padding:36px 40px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
-    <div style="text-align:center;margin-bottom:28px">
-      <div style="font-size:28px;margin-bottom:8px">📦</div>
-      <h2 style="font-size:20px;font-weight:700;color:#111827">Tomorrow Telecom</h2>
-      <p style="font-size:13px;color:#6b7280;margin-top:4px">Delivery Calendar</p>
+<!-- MAIN APP -->
+<div id="app">
+  <header>
+    <h1>📦 Tomorrow Telecom — Delivery Calendar</h1>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="meta" id="header-meta"></div>
+      <button class="logout-btn" onclick="doLogout()">Sign out</button>
     </div>
-    <div id="loginError" style="display:none;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:8px;padding:8px 12px;font-size:13px;margin-bottom:16px;text-align:center"></div>
-    <div style="margin-bottom:14px">
-      <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Username</label>
-      <input id="loginUser" type="text" placeholder="Enter username"
-        style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;color:#111827"
-        onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
-    <div style="margin-bottom:22px">
-      <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px">Password</label>
-      <input id="loginPass" type="password" placeholder="Enter password"
-        style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;color:#111827"
-        onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
-    <button onclick="doLogin()" style="
-      width:100%;padding:11px;background:#111827;color:#fff;border:none;
-      border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.15s"
-      onmouseover="this.style.background='#374151'" onmouseout="this.style.background='#111827'">
-      Sign In
-    </button>
+  </header>
+  <div class="notice-bar">
+    ✅ Updated June 12, 2026 — Portal + UPS tracking verified. 35 orders across 3 batches.
+    <a href="https://ashtomorrowtelecom-droid.github.io/tomorrow-telecom-delivery/" target="_blank" style="color:#9daff0;margin-left:4px">GitHub Pages ↗</a>
   </div>
-</div>
-
-<div class="container" style="display:none" id="mainContent">
-  <div class="stats-row" id="statsRow"></div>
-  <div id="calendar"></div>
-  <div class="updated-at" id="updatedAt"></div>
+  <div class="controls">
+    <select id="filter-status" onchange="render()">
+      <option value="all">All statuses</option>
+      <option value="delivered">Delivered</option>
+      <option value="out">Out for delivery</option>
+      <option value="pending">Pending</option>
+    </select>
+    <input type="text" id="search" placeholder="Search order…" oninput="render()">
+  </div>
+  <div class="calendar" id="calendar"></div>
+  <div class="summary-bar" id="summary-bar"></div>
 </div>
 
 <script>
-// ─────────────────────────────────────────────
-// USERS  (username → { password, label, displayName })
-// label: matching DELIVERIES label, or null for admin (sees all)
-// ─────────────────────────────────────────────
 const USERS = {
-  admin:    { password: 'admin123',    label: null,        displayName: 'Admin' },
-  ali:      { password: 'ali123',      label: 'ALI',       displayName: 'Ali' },
-  sk:       { password: 'sk123',       label: 'SK',        displayName: 'SK' },
-  amit:     { password: 'amit123',     label: 'AMIT',      displayName: 'Amit' },
-  bader:    { password: 'bader123',    label: 'BADER',     displayName: 'Bader' },
-  suleman:  { password: 'suleman123',  label: 'SULEMAN',   displayName: 'Suleman' },
-  sid:      { password: 'sid123',      label: 'SID',       displayName: 'Sid' },
-  cho:      { password: 'cho123',      label: 'CHO',       displayName: 'Cho' },
-  jacksboro:{ password: 'jacksboro123',label: 'JACKSBORO', displayName: 'Jacksboro' },
+  admin:     { pass: 'admin123',    label: null },
+  ali:       { pass: 'ali123',      label: 'ALI' },
+  sk:        { pass: 'sk123',       label: 'SK' },
+  amit:      { pass: 'amit123',     label: 'AMIT' },
+  suleman:   { pass: 'suleman123',  label: 'SULEMAN' },
+  sid:       { pass: 'sid123',      label: 'SID' },
+  bader:     { pass: 'bader123',    label: 'BADER' },
+  cho:       { pass: 'cho123',      label: 'CHO' },
+  mrcho:     { pass: 'mrcho123',    label: 'MRCHO' },
+  jacksboro: { pass: 'jacksboro123',label: 'JACKSBORO' },
+  wc:        { pass: 'wc123',       label: 'WC' },
 };
 
-let currentUser = null; // set after login
+const DELIVERIES = [
+
+  // ── June 4  (Jun 1 batch) ──
+  { id:'ALI0601', label:'ALI', orderRef:'ALI0601',
+    tracking:['1Z7900AX0384095204','1Z7900AX0384094965'],
+    deliveryDate:'2026-06-04', deliveryTime:'11:59 AM',
+    deliveryLocation:'Front Desk', status:'delivered', color:'#e20074' },
+
+  { id:'SID0601', label:'SID', orderRef:'SID0601',
+    tracking:['1Z7900AX0384097391','1Z7900AX0384097113','1Z7900AX0384097453'],
+    deliveryDate:'2026-06-04', deliveryTime:'12:46 PM',
+    deliveryLocation:'Front Desk', status:'delivered', color:'#00838f' },
+
+  { id:'BADER0601', label:'BADER', orderRef:'BADER0601',
+    tracking:[],
+    deliveryDate:'2026-06-04', deliveryTime:'1:03 PM',
+    deliveryLocation:'', status:'delivered', color:'#7b2d8b' },
+
+  { id:'MRCHO0601', label:'MRCHO', orderRef:'MRCHO0601',
+    tracking:['1Z7900AX0384107389'],
+    deliveryDate:'2026-06-04', deliveryTime:'1:15 PM',
+    deliveryLocation:'', status:'delivered', color:'#555555' },
+
+  { id:'SULEMAN0601', label:'SULEMAN', orderRef:'SULEMAN0601',
+    tracking:[],
+    deliveryDate:'2026-06-04', deliveryTime:'1:50 PM',
+    deliveryLocation:'', status:'delivered', color:'#e65100' },
+
+  // ── June 5  (Jun 1 batch) ──
+  { id:'SK0601SAMU', label:'SK', orderRef:'SK0601SAMU',
+    tracking:['1Z7900AX0384122853','1Z7900AX0384122862'],
+    deliveryDate:'2026-06-05', deliveryTime:'11:13 AM',
+    deliveryLocation:'Front Desk', status:'delivered', color:'#1565c0' },
+
+  { id:'JACKSBORO0601', label:'JACKSBORO', orderRef:'JACKSBORO0601',
+    tracking:['1Z7900AX0384093420','1Z7900AX0384093466'],
+    deliveryDate:'2026-06-05', deliveryTime:'11:29 AM',
+    deliveryLocation:'Front Desk', status:'delivered', color:'#6d4c41' },
+
+  { id:'SK0601HAL', label:'SK', orderRef:'SK0601HAL',
+    tracking:['1Z7900AX0384120784'],
+    deliveryDate:'2026-06-05', deliveryTime:'11:49 AM',
+    deliveryLocation:'Front Desk', status:'delivered', color:'#1565c0' },
+
+  { id:'SK0601WESC', label:'SK', orderRef:'SK0601WESC',
+    tracking:['1Z7900AX0384126662','1Z7900AX0384128517'],
+    deliveryDate:'2026-06-05', deliveryTime:'12:58 PM',
+    deliveryLocation:'Front Desk', status:'delivered', color:'#1565c0' },
+
+  { id:'SK0601BEWES', label:'SK', orderRef:'SK0601BEWES',
+    tracking:['1Z7900AX0384123932'],
+    deliveryDate:'2026-06-05', deliveryTime:'1:04 PM',
+    deliveryLocation:'Front Desk', status:'delivered', color:'#1565c0' },
+
+  { id:'ALI0601SP01', label:'ALI', orderRef:'ALI0601SP01',
+    tracking:['1Z7900AX0384122960'],
+    deliveryDate:'2026-06-05', deliveryTime:'1:34 PM',
+    deliveryLocation:'Front Desk', status:'delivered', color:'#e20074' },
+
+  { id:'SK0601FM', label:'SK', orderRef:'SK0601FM',
+    tracking:['1Z7900AX0384124271'],
+    deliveryDate:'2026-06-05', deliveryTime:'1:37 PM',
+    deliveryLocation:'Front Desk', status:'delivered', color:'#1565c0' },
+
+  { id:'SK0601ROSD', label:'SK', orderRef:'SK0601ROSD',
+    tracking:['1Z7900AX0384122246','1Z7900AX0384121989'],
+    deliveryDate:'2026-06-05', deliveryTime:'1:43 PM',
+    deliveryLocation:'Front Desk', status:'delivered', color:'#1565c0' },
+
+  { id:'BADER0601SP01', label:'BADER', orderRef:'BADER0601SP01',
+    tracking:['1Z7900AX0384123058'],
+    deliveryDate:'2026-06-05', deliveryTime:'1:46 PM',
+    deliveryLocation:'Front Desk', status:'delivered', color:'#7b2d8b' },
+
+  { id:'SK0601FER', label:'SK', orderRef:'SK0601FER',
+    tracking:[],
+    deliveryDate:'2026-06-05', deliveryTime:'4:11 PM',
+    deliveryLocation:'', status:'delivered', color:'#1565c0' },
+
+  // ── June 11  (Jun 8 main batch) ──
+  { id:'SULEMAN0608', label:'SULEMAN', orderRef:'SULEMAN0608',
+    tracking:['1Z7900AX0384191583'],
+    deliveryDate:'2026-06-11', deliveryTime:'',
+    deliveryLocation:'', status:'delivered', color:'#e65100' },
+
+  { id:'AMIT0608', label:'AMIT', orderRef:'AMIT0608',
+    tracking:['1Z7900AX0384196248','1Z7900AX0384196015','1Z7900AX0384195043','1Z7900AX0384195052'],
+    deliveryDate:'2026-06-11', deliveryTime:'',
+    deliveryLocation:'', status:'delivered', color:'#2e7d32' },
+
+  { id:'SID0608', label:'SID', orderRef:'SID0608',
+    tracking:['1Z7900AX0384195267'],
+    deliveryDate:'2026-06-11', deliveryTime:'',
+    deliveryLocation:'', status:'delivered', color:'#00838f' },
+
+  { id:'CHO0608', label:'CHO', orderRef:'CHO0608',
+    tracking:['1Z7900AX0384198175'],
+    deliveryDate:'2026-06-11', deliveryTime:'',
+    deliveryLocation:'', status:'delivered', color:'#c62828' },
+
+  { id:'BADER0608', label:'BADER', orderRef:'BADER0608',
+    tracking:['1Z7900AX0384198031','1Z7900AX0384198022'],
+    deliveryDate:'2026-06-11', deliveryTime:'',
+    deliveryLocation:'', status:'delivered', color:'#7b2d8b' },
+
+  { id:'ALI0608', label:'ALI', orderRef:'ALI0608',
+    tracking:['1Z7900AX0384195472','1Z7900AX0384195445','1Z7900AX0384196104','1Z7900AX0384195383','1Z7900AX0384196113'],
+    deliveryDate:'2026-06-11', deliveryTime:'',
+    deliveryLocation:'', status:'delivered', color:'#e20074' },
+
+  { id:'SK0608FER', label:'SK', orderRef:'SK0608FER',
+    tracking:['1Z7900AX0384195258','1Z7900AX0384194517'],
+    deliveryDate:'2026-06-11', deliveryTime:'',
+    deliveryLocation:'', status:'delivered', color:'#1565c0' },
+
+  { id:'SK0608SAM', label:'SK', orderRef:'SK0608SAM',
+    tracking:['1Z7900AX0384199594','1Z7900AX0384199629'],
+    deliveryDate:'2026-06-11', deliveryTime:'',
+    deliveryLocation:'', status:'delivered', color:'#1565c0' },
+
+  { id:'SK0608FM', label:'SK', orderRef:'SK0608FM',
+    tracking:['1Z7900AX0384188980'],
+    deliveryDate:'2026-06-11', deliveryTime:'2:21 PM',
+    deliveryLocation:'Front Desk', status:'delivered', color:'#1565c0' },
+
+  { id:'SK0608BEWES', label:'SK', orderRef:'SK0608BEWES',
+    tracking:['1Z7900AX0384196837'],
+    deliveryDate:'2026-06-11', deliveryTime:'',
+    deliveryLocation:'', status:'delivered', color:'#1565c0' },
+
+  { id:'SK0608WESC', label:'SK', orderRef:'SK0608WESC',
+    tracking:['1Z7900AX0384198380'],
+    deliveryDate:'2026-06-11', deliveryTime:'',
+    deliveryLocation:'', status:'delivered', color:'#1565c0' },
+
+  { id:'SK0608ROSD', label:'SK', orderRef:'SK0608ROSD',
+    tracking:['1Z7900AX0384190208'],
+    deliveryDate:'2026-06-11', deliveryTime:'',
+    deliveryLocation:'', status:'delivered', color:'#1565c0' },
+
+  { id:'SK0608HAL', label:'SK', orderRef:'SK0608HAL',
+    tracking:['1Z7900AX0384197149'],
+    deliveryDate:'2026-06-11', deliveryTime:'',
+    deliveryLocation:'', status:'delivered', color:'#1565c0' },
+
+  // ── June 12  (Jun 8 SP01/SP02 batch) ──
+  { id:'SK0608SP01BEWES', label:'SK', orderRef:'SK0608SP01BEWES',
+    tracking:['1Z7900AX0384226152'],
+    deliveryDate:'2026-06-12', deliveryTime:'11:18 AM',
+    deliveryLocation:'Front Desk', status:'delivered', color:'#1565c0' },
+
+  { id:'AMIT0608SP01', label:'AMIT', orderRef:'AMIT0608SP01',
+    tracking:['1Z7900AX0384221586'],
+    deliveryDate:'2026-06-12', deliveryTime:'',
+    deliveryLocation:'', status:'delivered', color:'#2e7d32' },
+
+  { id:'AMIT0608SP02', label:'AMIT', orderRef:'AMIT0608SP02',
+    tracking:['1Z7900AX0384208789'],
+    deliveryDate:'2026-06-12', deliveryTime:'',
+    deliveryLocation:'', status:'delivered', color:'#2e7d32' },
+
+  { id:'ALI0608SSP01', label:'ALI', orderRef:'ALI0608SSP01',
+    tracking:['1Z7900AX0384226287'],
+    deliveryDate:'2026-06-12', deliveryTime:'',
+    deliveryLocation:'', status:'delivered', color:'#e20074' },
+
+  { id:'SK0608SP01ROSD', label:'SK', orderRef:'SK0608SP01ROSD',
+    tracking:['1Z7900AX0384226554'],
+    deliveryDate:'2026-06-12', deliveryTime:'',
+    deliveryLocation:'', status:'delivered', color:'#1565c0' },
+
+  { id:'SK0608SP01FER', label:'SK', orderRef:'SK0608SP01FER',
+    tracking:['1Z7900AX0384208556'],
+    deliveryDate:'2026-06-12', deliveryTime:'',
+    deliveryLocation:'', status:'out', color:'#1565c0',
+    note:'Out for delivery — expected by 9:00 PM' },
+
+  // ── Est. June 15  (Jun 9 batch, in transit) ──
+  { id:'AMIT0609SP02', label:'AMIT', orderRef:'AMIT0609SP02',
+    tracking:['1Z7900AX0384241439'],
+    deliveryDate:'2026-06-15', deliveryTime:'',
+    deliveryLocation:'', status:'pending', color:'#2e7d32',
+    note:'In transit — est. delivery Mon June 15' },
+
+  { id:'SK0609SP01HAL', label:'SK', orderRef:'SK0609SP01HAL',
+    tracking:['1Z7900AX0384247004'],
+    deliveryDate:'2026-06-15', deliveryTime:'',
+    deliveryLocation:'', status:'pending', color:'#1565c0',
+    note:'In transit — est. delivery Mon June 15' },
+
+  // ── Pending ──
+  { id:'WC0612', label:'WC', orderRef:'WC0612',
+    tracking:[],
+    deliveryDate:'', deliveryTime:'',
+    deliveryLocation:'', status:'pending', color:'#607d8b',
+    note:'Placed Jun 12 — In Process, awaiting shipment (SAG 5G Gateway + REVVL Tab)' },
+];
+
+let currentUser = null;
 
 function doLogin() {
-  const u = document.getElementById('loginUser').value.trim().toLowerCase();
-  const p = document.getElementById('loginPass').value;
-  const user = USERS[u];
-  if (!user || user.password !== p) {
-    const err = document.getElementById('loginError');
-    err.textContent = 'Incorrect username or password.';
-    err.style.display = 'block';
-    return;
+  const u = document.getElementById('username').value.trim().toLowerCase();
+  const p = document.getElementById('password').value;
+  const err = document.getElementById('login-error');
+  if (USERS[u] && USERS[u].pass === p) {
+    currentUser = { username: u, ...USERS[u] };
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('header-meta').textContent =
+      new Date().toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+    render();
+  } else {
+    err.textContent = 'Invalid username or password.';
   }
-  currentUser = { ...user, username: u };
-  document.getElementById('loginOverlay').style.display = 'none';
-  document.getElementById('mainContent').style.display = '';
-  // If non-admin, lock the name filter to this user's label
-  if (currentUser.label) {
-    selectedNames = new Set([currentUser.label]);
-    document.getElementById('filterBarWrap').style.display = 'none';
-  }
-  // Show user info in header
-  document.getElementById('headerUser').innerHTML =
-    `<span style="font-size:13px;color:#374151;font-weight:600">${currentUser.displayName}</span>
-     <button onclick="doLogout()" style="margin-left:8px;padding:4px 10px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;font-size:12px;cursor:pointer;color:#374151">Sign out</button>`;
-  render();
-  applyFilters();
 }
 
 function doLogout() {
   currentUser = null;
-  selectedNames = new Set(ALL_NAMES);
-  document.getElementById('filterBarWrap').style.display = '';
-  document.getElementById('loginUser').value = '';
-  document.getElementById('loginPass').value = '';
-  document.getElementById('loginError').style.display = 'none';
-  document.getElementById('loginOverlay').style.display = 'flex';
-  document.getElementById('mainContent').style.display = 'none';
-  document.getElementById('headerUser').innerHTML = '';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('username').value = '';
+  document.getElementById('password').value = '';
 }
 
-// ─────────────────────────────────────────────
-// DATA
-// ─────────────────────────────────────────────
-const DELIVERIES = [
-  // ── June 4 ──
-  { date:'2026-06-04', time:'11:59', orderRef:'ALI0601',       label:'ALI',      pkgs:2, tracking:['1Z7900AX0384095204','1Z7900AX0384094965'], status:'delivered' },
-  { date:'2026-06-04', time:'12:46', orderRef:'SID0601',       label:'SID',      pkgs:3, tracking:['1Z7900AX0384097391','1Z7900AX0384097113','1Z7900AX0384097453'], status:'delivered' },
-  { date:'2026-06-04', time:'13:03', orderRef:'BADER0601',     label:'BADER',    pkgs:1, tracking:[], status:'delivered' },
-  { date:'2026-06-04', time:'13:15', orderRef:'MRCHO0601',     label:'CHO',      pkgs:1, tracking:['1Z7900AX0384107389'], status:'delivered' },
-  { date:'2026-06-04', time:'13:50', orderRef:'SULEMAN0601',   label:'SULEMAN',  pkgs:1, tracking:[], status:'delivered' },
-  // ── June 5 ──
-  { date:'2026-06-05', time:'11:13', orderRef:'SK0601SAMU',    label:'SK',       pkgs:2, tracking:['1Z7900AX0384122853','1Z7900AX0384122863'], status:'delivered' },
-  { date:'2026-06-05', time:'11:29', orderRef:'JACKSBORO0601', label:'JACKSBORO',pkgs:2, tracking:['1Z7900AX0384093420','1Z7900AX0384093466'], status:'delivered' },
-  { date:'2026-06-05', time:'11:49', orderRef:'SK0601HAL',     label:'SK',       pkgs:1, tracking:['1Z7900AX0384120784'], status:'delivered' },
-  { date:'2026-06-05', time:'12:58', orderRef:'SK0601WESC',    label:'SK',       pkgs:2, tracking:['1Z7900AX0384126662','1Z7900AX0384128517'], status:'delivered' },
-  { date:'2026-06-05', time:'13:04', orderRef:'SK0601BEWES',   label:'SK',       pkgs:1, tracking:['1Z7900AX0384123932'], status:'delivered' },
-  { date:'2026-06-05', time:'13:34', orderRef:'ALI0601SP01',   label:'ALI',      pkgs:1, tracking:['1Z7900AX0384122960'], status:'delivered' },
-  { date:'2026-06-05', time:'13:37', orderRef:'SK0601FM',      label:'SK',       pkgs:1, tracking:['1Z7900AX0384124271'], status:'delivered' },
-  { date:'2026-06-05', time:'13:43', orderRef:'SK0601ROSD',    label:'SK',       pkgs:2, tracking:['1Z7900AX0384122246','1Z7900AX0384121989'], status:'delivered' },
-  { date:'2026-06-05', time:'13:46', orderRef:'BADER0601SP01', label:'BADER',    pkgs:1, tracking:['1Z7900AX0384123058'], status:'delivered' },
-  { date:'2026-06-05', time:'16:11', orderRef:'SK0601FER',     label:'SK',       pkgs:1, tracking:[], status:'delivered' },
-  // ── June 11 — Out for Delivery ──
-  { date:'2026-06-11', time:null, orderRef:'SULEMAN0608',      label:'SULEMAN',  pkgs:1, tracking:['1Z7900AX0384191583'], status:'out_for_delivery', note:'Out for Delivery by 9 PM' },
-  { date:'2026-06-11', time:null, orderRef:'AMIT0608',         label:'AMIT',     pkgs:4, tracking:['1Z7900AX0384196248','1Z7900AX0384196015','1Z7900AX0384195043','1Z7900AX0384195052'], status:'out_for_delivery', note:'Out for Delivery by 9 PM' },
-  { date:'2026-06-11', time:null, orderRef:'SID0608',          label:'SID',      pkgs:1, tracking:['1Z7900AX0384195267'], status:'out_for_delivery', note:'Out for Delivery by 9 PM' },
-  { date:'2026-06-11', time:null, orderRef:'CHO0608',          label:'CHO',      pkgs:1, tracking:['1Z7900AX0384198175'], status:'out_for_delivery', note:'Out for Delivery by 9 PM' },
-  { date:'2026-06-11', time:null, orderRef:'BADER0608',        label:'BADER',    pkgs:2, tracking:['1Z7900AX0384198031','1Z7900AX0384198022'], status:'out_for_delivery', note:'Out for Delivery by 9 PM' },
-  { date:'2026-06-11', time:null, orderRef:'ALI0608',          label:'ALI',      pkgs:5, tracking:['1Z7900AX0384195472','1Z7900AX0384195445','1Z7900AX0384196104','1Z7900AX0384195383','1Z7900AX0384196113'], status:'out_for_delivery', note:'Out for Delivery by 9 PM' },
-  { date:'2026-06-11', time:null, orderRef:'SK0608FER',        label:'SK',       pkgs:2, tracking:['1Z7900AX0384195258','1Z7900AX0384194517'], status:'out_for_delivery', note:'Out for Delivery by 9 PM' },
-];
-
-// ─────────────────────────────────────────────
-// CONFIG
-// ─────────────────────────────────────────────
-const LABEL_COLORS = {
-  ALI:'#e20074', BADER:'#7b2d8b', SK:'#1565c0', AMIT:'#2e7d32',
-  SULEMAN:'#e65100', SID:'#00838f', JACKSBORO:'#6d4c41', CHO:'#c62828'
-};
-
-const ALL_NAMES = [...new Set(DELIVERIES.map(d => d.label))].sort();
-let selectedNames = new Set(ALL_NAMES);
-let activeStatus = 'all';
-
-// ─────────────────────────────────────────────
-// RENDER
-// ─────────────────────────────────────────────
-function render() {
-  const statsRow = document.getElementById('statsRow');
-  const calendar = document.getElementById('calendar');
-
-  // Compute stats from current user's visible deliveries
-  const visible = DELIVERIES.filter(d => {
-    const cardLabel = d.label || '';
-    if (currentUser && currentUser.label) return cardLabel === currentUser.label;
-    return true;
-  });
-
-  const total = visible.length;
-  const delivered = visible.filter(d => d.status === 'delivered').length;
-  const outForDelivery = visible.filter(d => d.status === 'out_for_delivery').length;
-  const onTheWay = visible.filter(d => d.status === 'on_the_way').length;
-  const pending = visible.filter(d => d.status === 'pending').length;
-
-  const statDefs = [
-    { key:'all',              label:'Total Orders',      value:total,         color:'#111827' },
-    { key:'out_for_delivery', label:'Out for Delivery',  value:outForDelivery,color:'#c2410c' },
-    { key:'on_the_way',       label:'On the Way',        value:onTheWay,      color:'#1d4ed8' },
-    { key:'delivered',        label:'Delivered',         value:delivered,     color:'#15803d' },
-    { key:'pending',          label:'Pending',           value:pending,       color:'#6b7280' },
-  ];
-
-  statsRow.innerHTML = statDefs.map(s => `
-    <div class="stat${activeStatus===s.key?' active-stat':''}" onclick="setStatusFilter('${s.key}')">
-      <div class="stat-value" style="color:${s.color}">${s.value}</div>
-      <div class="stat-label">${s.label}</div>
-    </div>`).join('');
-
-  // Group by date
-  const byDate = {};
-  DELIVERIES.forEach(d => {
-    const key = d.date || '__pending__';
-    if (!byDate[key]) byDate[key] = [];
-    byDate[key].push(d);
-  });
-
-  const dateKeys = Object.keys(byDate).sort((a,b) => {
-    if (a==='__pending__') return -1; if (b==='__pending__') return 1;
-    return a > b ? -1 : 1;
-  });
-
-  calendar.innerHTML = dateKeys.map(dk => {
-    const entries = byDate[dk];
-    const label = dk === '__pending__' ? 'Pending / TBD' :
-      new Date(dk + 'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-
-    // Day-level status
-    const hasOut = entries.some(e => e.status==='out_for_delivery');
-    const hasWay = entries.some(e => e.status==='on_the_way');
-    const allDone = entries.every(e => e.status==='delivered');
-    const hasPend = entries.some(e => e.status==='pending');
-    const badgeCls = hasOut ? 'badge-out' : hasWay ? 'badge-way' : allDone ? 'badge-delivered' : 'badge-pending';
-    const badgeTxt = hasOut ? 'Out for Delivery' : hasWay ? 'In Transit' : allDone ? 'All Delivered' : 'Pending';
-
-    const cards = entries.map(d => {
-      const color = LABEL_COLORS[d.label] || '#555';
-      const timeTxt = d.time ? ` · ${d.time.replace(':','h').replace(/(\d+h\d+)/,m=>{const[h,mn]=m.split('h');return (parseInt(h)%12||12)+':'+(mn||'00')+(parseInt(h)<12?'AM':'PM');})}` : '';
-      const statusMap = {delivered:'Delivered',out_for_delivery:'Out for Delivery',on_the_way:'On the Way',pending:'Pending'};
-      const statusCls = {delivered:'status-delivered',out_for_delivery:'status-out',on_the_way:'status-way',pending:'status-pending'};
-      const tracking = d.tracking && d.tracking.length ? `<div class="tracking-list">${d.tracking.map(t=>`<a class="tracking-link" href="https://www.ups.com/track?loc=en_US&tracknum=${t}" target="_blank"><span class="tracking-num">${t}</span></a>`).join('')}</div>` : '';
-      const note = d.note ? `<div class="order-note">${d.note}</div>` : '';
-      return `<div class="order-card" style="border-left-color:${color}" data-label="${d.label}" data-status="${d.status}">
-        <div class="order-top">
-          <span class="order-label" style="background:${color}">${d.label}</span>
-          <span class="order-ref">${d.orderRef}</span>
-          <span class="order-time">${timeTxt}</span>
-        </div>
-        <div class="order-meta">
-          <span class="pkg-count">${d.pkgs} pkg${d.pkgs!==1?'s':''}</span>
-          <span class="order-status ${statusCls[d.status]||'status-pending'}">${statusMap[d.status]||d.status}</span>
-        </div>
-        ${note}${tracking}
-      </div>`;
-    }).join('');
-
-    return `<div class="day-section" id="day-${dk}">
-      <div class="day-header" onclick="toggleDay('day-${dk}')">
-        <span class="day-toggle">▼</span>
-        <h2>${label}</h2>
-        <span class="day-count">${entries.length} order${entries.length!==1?'s':''}</span>
-        <span class="day-status-badge ${badgeCls}">${badgeTxt}</span>
-      </div>
-      <div class="day-body"><div class="orders-grid">${cards}</div></div>
-    </div>`;
-  }).join('');
-
-  // Build name dropdown checkboxes
-  const cbContainer = document.getElementById('nameCheckboxes');
-  cbContainer.innerHTML = ALL_NAMES.map(n => `
-    <div class="dropdown-item" onclick="toggleName('${n}')">
-      <input type="checkbox" id="chk-${n}" ${selectedNames.has(n)?'checked':''}>
-      <span class="name-dot" style="background:${LABEL_COLORS[n]||'#888'}"></span>
-      <span>${n}</span>
-    </div>`).join('');
-
-  updateDropdownLabel();
-  document.getElementById('updatedAt').textContent = 'Last updated: ' + new Date().toLocaleString();
-}
-
-function applyFilters() {
-  document.querySelectorAll('.order-card').forEach(card => {
-    const cardLabel = card.dataset.label;
-    const cardStatus = card.dataset.status;
-    const nameOk = selectedNames.has(cardLabel);
-    const statusOk = activeStatus === 'all' || cardStatus === activeStatus;
-    card.classList.toggle('hidden', !(nameOk && statusOk));
-  });
-
-  // Hide empty day sections
-  document.querySelectorAll('.day-section').forEach(sec => {
-    const visible = sec.querySelectorAll('.order-card:not(.hidden)').length;
-    sec.style.display = visible ? '' : 'none';
-  });
-
-  // Update stat tiles
-  document.querySelectorAll('.stat').forEach(tile => {
-    tile.classList.toggle('active-stat', tile.onclick && tile.getAttribute('onclick') &&
-      tile.getAttribute('onclick').includes(`'${activeStatus}'`));
-  });
-}
-
-function setStatusFilter(status) {
-  activeStatus = status;
-  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-  const pill = document.querySelector(`.pill[data-status="${status}"]`);
-  if (pill) pill.classList.add('active');
-  applyFilters();
-  // Re-render stats to update highlight
-  render();
-  applyFilters();
-}
-
-function toggleDay(id) {
-  document.getElementById(id).classList.toggle('collapsed');
-}
-
-function toggleDropdown() {
-  const menu = document.getElementById('nameDropMenu');
-  const btn = document.getElementById('nameDropBtn');
-  menu.classList.toggle('open');
-  btn.classList.toggle('open');
-}
-
-function toggleName(name) {
-  if (selectedNames.has(name)) {
-    selectedNames.delete(name);
-  } else {
-    selectedNames.add(name);
-  }
-  const cb = document.getElementById('chk-' + name);
-  if (cb) cb.checked = selectedNames.has(name);
-  updateDropdownLabel();
-  applyFilters();
-}
-
-function selectAllNames() {
-  selectedNames = new Set(ALL_NAMES);
-  document.getElementById('chk-all').checked = true;
-  document.getElementById('chk-none').checked = false;
-  ALL_NAMES.forEach(n => { const cb = document.getElementById('chk-'+n); if(cb) cb.checked = true; });
-  updateDropdownLabel();
-  applyFilters();
-}
-
-function deselectAllNames() {
-  selectedNames = new Set();
-  document.getElementById('chk-all').checked = false;
-  document.getElementById('chk-none').checked = true;
-  ALL_NAMES.forEach(n => { const cb = document.getElementById('chk-'+n); if(cb) cb.checked = false; });
-  updateDropdownLabel();
-  applyFilters();
-}
-
-function updateDropdownLabel() {
-  const lbl = document.getElementById('nameDropLabel');
-  if (selectedNames.size === ALL_NAMES.length) lbl.textContent = 'All names';
-  else if (selectedNames.size === 0) lbl.textContent = 'None selected';
-  else if (selectedNames.size === 1) lbl.textContent = [...selectedNames][0];
-  else lbl.textContent = selectedNames.size + ' selected';
-}
-
-// Close dropdown on outside click
-document.addEventListener('click', e => {
-  if (!document.getElementById('nameDropWrap').contains(e.target)) {
-    document.getElementById('nameDropMenu').classList.remove('open');
-    document.getElementById('nameDropBtn').classList.remove('open');
-  }
+document.getElementById('password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
 });
 
-// Header date
-document.getElementById('headerDate').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+function render() {
+  const filterStatus = document.getElementById('filter-status').value;
+  const search = document.getElementById('search').value.trim().toLowerCase();
+  let data = DELIVERIES.filter(d => {
+    if (currentUser.label && d.label !== currentUser.label) return false;
+    if (filterStatus !== 'all' && d.status !== filterStatus) return false;
+    if (search && !d.orderRef.toLowerCase().includes(search) &&
+        !d.tracking.some(t => t.toLowerCase().includes(search))) return false;
+    return true;
+  });
+  const groups = {};
+  data.forEach(d => {
+    const key = d.deliveryDate || 'pending';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(d);
+  });
+  const sortedDays = Object.keys(groups).sort((a, b) => {
+    if (a === 'pending') return 1;
+    if (b === 'pending') return -1;
+    return a < b ? -1 : 1;
+  });
+  const cal = document.getElementById('calendar');
+  cal.innerHTML = sortedDays.map(day => {
+    const entries = groups[day].sort((a, b) => {
+      if (!a.deliveryTime) return 1;
+      if (!b.deliveryTime) return -1;
+      return a.deliveryTime < b.deliveryTime ? -1 : 1;
+    });
+    const label = day === 'pending'
+      ? 'Pending / No Date'
+      : new Date(day + 'T12:00:00').toLocaleDateString('en-US',
+          {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+    return `<div class="day-group">
+      <div class="day-header">${label}<span class="day-count">${entries.length} order${entries.length !== 1 ? 's' : ''}</span></div>
+      <div class="card-grid">${entries.map(cardHTML).join('')}</div>
+    </div>`;
+  }).join('');
+  const total = data.length;
+  const delivered = data.filter(d => d.status === 'delivered').length;
+  const out = data.filter(d => d.status === 'out').length;
+  const pending = data.filter(d => d.status === 'pending').length;
+  document.getElementById('summary-bar').innerHTML =
+    `<span>Total: <b>${total}</b></span>
+     <span>Delivered: <b>${delivered}</b></span>
+     <span>Out for delivery: <b>${out}</b></span>
+     <span>Pending / In Transit: <b>${pending}</b></span>`;
+}
+
+function cardHTML(d) {
+  const statusClass = {
+    delivered: 'status-delivered',
+    out: 'status-out',
+    pending: 'status-pending',
+  }[d.status] || 'status-unknown';
+  const statusLabel = {
+    delivered: 'Delivered',
+    out: 'Out for Delivery',
+    pending: 'Pending',
+  }[d.status] || 'Unknown';
+  const trackingHTML = d.tracking.length
+    ? `<div class="tracking-list">${d.tracking.map(t =>
+        `<span class="tracking-num">${t}</span>`).join('')}</div>`
+    : '';
+  const timeHTML = d.deliveryTime
+    ? `<div class="card-time">${d.deliveryTime}${d.deliveryLocation ? ` · ${d.deliveryLocation}` : ''}</div>`
+    : '';
+  const noteHTML = d.note
+    ? `<div class="card-location" style="color:#888;margin-top:6px;font-style:italic">${d.note}</div>`
+    : '';
+  return `<div class="card" style="--card-color:${d.color}">
+    <style>.card[style*="${d.color}"]::before{background:${d.color}}</style>
+    <div class="card-top">
+      <div class="card-ref">${d.orderRef}</div>
+      <div class="card-status ${statusClass}">${statusLabel}</div>
+    </div>
+    ${timeHTML}
+    ${noteHTML}
+    ${trackingHTML}
+  </div>`;
+}
 </script>
 </body>
 </html>
